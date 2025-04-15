@@ -52,6 +52,14 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+        workants: {
+          blue: '#0000FF',
+          orange: '#FF8C00',
+          black: '#000000',
+          darkgray: '#222222',
+          gray: '#333333',
+          lightgray: '#8A898C',
+        },
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
