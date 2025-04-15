@@ -1,20 +1,33 @@
 
 import { useState } from 'react';
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock, LogIn } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Login logic would go here
-    console.log("Login attempt with:", { email, password });
-    alert("Login functionality will be implemented when backend is connected.");
+    setIsLoading(true);
+    
+    try {
+      await signIn(email, password);
+      const from = (location.state as any)?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    } catch (error) {
+      console.error("Login error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

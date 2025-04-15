@@ -1,10 +1,11 @@
 
 import { useState } from 'react';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock, User, UserPlus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,9 @@ const Signup = () => {
     password: "",
     confirmPassword: ""
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -23,18 +27,23 @@ const Signup = () => {
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Signup logic would go here
-    console.log("Signup attempt with:", formData);
     
-    // Check if passwords match
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
     
-    alert("Signup functionality will be implemented when backend is connected.");
+    setIsLoading(true);
+    try {
+      await signUp(formData.email, formData.password);
+      navigate("/");
+    } catch (error) {
+      console.error("Signup error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
