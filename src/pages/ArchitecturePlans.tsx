@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import AddBlueprintForm from '@/components/AddBlueprintForm';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Blueprint {
   id: string;
@@ -26,39 +28,74 @@ const ArchitecturePlans = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
+  // Check if the current user is an admin
   useEffect(() => {
-    const fetchBlueprints = async () => {
+    const checkAdminRole = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
-          .from('blueprints')
-          .select('*');
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .single();
 
-        if (error) throw error;
-
-        if (data) {
-          setBlueprints(data);
-          setFilteredBlueprints(data);
-          
-          // Extract unique categories
-          const uniqueCategories = Array.from(
-            new Set(data.map((blueprint) => blueprint.category))
-          );
-          setCategories(uniqueCategories);
+        if (error) {
+          console.error('Error checking admin role:', error);
+          setIsAdmin(false);
+          return;
         }
-      } catch (error: any) {
-        console.error('Error fetching blueprints:', error);
-        toast({
-          variant: "destructive",
-          title: "Error loading blueprints",
-          description: error.message || "Failed to load blueprints. Please try again later.",
-        });
-      } finally {
-        setIsLoading(false);
+
+        setIsAdmin(!!data);
+      } catch (error) {
+        console.error('Error in admin check:', error);
+        setIsAdmin(false);
       }
     };
 
+    checkAdminRole();
+  }, [user]);
+
+  const fetchBlueprints = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('blueprints')
+        .select('*');
+
+      if (error) throw error;
+
+      if (data) {
+        setBlueprints(data);
+        setFilteredBlueprints(data);
+        
+        // Extract unique categories
+        const uniqueCategories = Array.from(
+          new Set(data.map((blueprint) => blueprint.category))
+        );
+        setCategories(uniqueCategories);
+      }
+    } catch (error: any) {
+      console.error('Error fetching blueprints:', error);
+      toast({
+        variant: "destructive",
+        title: "Error loading blueprints",
+        description: error.message || "Failed to load blueprints. Please try again later.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchBlueprints();
   }, [toast]);
 
@@ -85,11 +122,17 @@ const ArchitecturePlans = () => {
   return (
     <div className="min-h-screen bg-workants-black text-white pt-8 md:ml-64 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Architecture Plans for Sale</h1>
-          <p className="text-gray-300">
-            Browse our collection of professionally designed architectural plans
-          </p>
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Architecture Plans for Sale</h1>
+            <p className="text-gray-300">
+              Browse our collection of professionally designed architectural plans
+            </p>
+          </div>
+          
+          {isAdmin && (
+            <AddBlueprintForm onSuccess={fetchBlueprints} />
+          )}
         </div>
 
         {/* Filters */}
