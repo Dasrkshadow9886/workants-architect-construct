@@ -1,266 +1,343 @@
 
 import { useState } from "react";
+import { Calendar, Clock, User, Mail, Phone, MessageSquare, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { CalendarIcon, Clock, CheckCircle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+const availableTimes = [
+  "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00",
+];
 
 const BookConsultation = () => {
-  const [date, setDate] = useState<Date | undefined>();
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    consultationType: "architecture",
+    message: "",
+  });
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [time, setTime] = useState<string | undefined>(undefined);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Form submission logic would go here
-    setFormSubmitted(true);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const consultationTypes = [
-    { value: "architecture", label: "Architecture Consultation" },
-    { value: "construction", label: "Construction Consultation" },
-    { value: "both", label: "Architecture & Construction Consultation" }
-  ];
+  const handleConsultationTypeChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      consultationType: value
+    }));
+  };
 
-  const timeSlots = [
-    "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", 
-    "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"
-  ];
-
-  if (formSubmitted) {
-    return (
-      <div className="min-h-screen bg-workants-black text-white flex items-center justify-center">
-        <div className="max-w-lg mx-auto text-center p-8 bg-gray-800 rounded-lg">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-6" />
-          <h1 className="text-3xl font-bold mb-4">Consultation Request Submitted!</h1>
-          <p className="text-xl text-gray-300 mb-6">
-            Thank you for booking a consultation with WorkAnts. We'll review your request and get back to you shortly to confirm your appointment.
-          </p>
-          <Button 
-            onClick={() => setFormSubmitted(false)} 
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Book Another Consultation
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!date || !time) {
+      toast({
+        variant: "destructive",
+        title: "Please select a date and time",
+        description: "Both date and time are required to book a consultation",
+      });
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Format the date and time for storage
+      const selectedDateTime = new Date(date);
+      const [hours, minutes] = time.split(':');
+      selectedDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      
+      // If we had a real backend integration, we would send this data to the API
+      // For now, we'll simulate a successful booking
+      
+      if (user) {
+        // For authenticated users, we can store consultation in their profile
+        // This is a placeholder for future functionality
+        console.log("Booking for authenticated user:", user.id);
+      }
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast({
+        title: "Consultation Booked!",
+        description: `Your consultation has been scheduled for ${format(selectedDateTime, 'PPP')} at ${time}.`,
+      });
+      
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        consultationType: "architecture",
+        message: "",
+      });
+      setDate(undefined);
+      setTime(undefined);
+      
+    } catch (error: any) {
+      console.error("Error booking consultation:", error);
+      toast({
+        variant: "destructive",
+        title: "Booking failed",
+        description: error.message || "Could not book consultation. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-workants-black text-white">
-      {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-b from-workants-black to-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Book a Consultation</h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Schedule a consultation with our experts to discuss your project needs
-            </p>
-          </div>
+    <div className="min-h-screen bg-workants-black text-white pt-8 md:ml-64 px-4 md:px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Book a Consultation</h1>
+          <p className="text-gray-300">
+            Schedule a meeting with our experts to discuss your project needs
+          </p>
         </div>
-      </section>
 
-      {/* Booking Form */}
-      <section className="py-16 bg-gray-900">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gray-800 p-8 rounded-lg">
-            <h2 className="text-2xl font-bold mb-6">Consultation Request Form</h2>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-6">
-                {/* Personal Information */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-4">Personal Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="firstName" className="block text-gray-300 mb-2">First Name</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-1">
+            <div className="bg-gray-800 rounded-lg p-6 space-y-6 border border-gray-700">
+              <h2 className="text-xl font-semibold">Consultation Details</h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <Calendar className="h-5 w-5 text-blue-400 mr-3" />
+                  <div>
+                    <h3 className="font-medium">Duration</h3>
+                    <p className="text-gray-400 text-sm">60 minutes</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center">
+                  <Clock className="h-5 w-5 text-blue-400 mr-3" />
+                  <div>
+                    <h3 className="font-medium">Business Hours</h3>
+                    <p className="text-gray-400 text-sm">Mon-Fri: 9am - 5pm</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <Phone className="h-5 w-5 text-blue-400 mr-3 mt-1" />
+                  <div>
+                    <h3 className="font-medium">Phone</h3>
+                    <p className="text-gray-400 text-sm">+27 12 345 6789</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <Mail className="h-5 w-5 text-blue-400 mr-3 mt-1" />
+                  <div>
+                    <h3 className="font-medium">Email</h3>
+                    <p className="text-gray-400 text-sm">info@workants.co.za</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="md:col-span-2">
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
+                      Name
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <User className="h-5 w-5 text-gray-500" />
+                      </div>
                       <Input
-                        id="firstName"
-                        type="text"
-                        placeholder="Enter your first name"
-                        className="bg-gray-700 border-gray-600 text-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="lastName" className="block text-gray-300 mb-2">Last Name</label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        placeholder="Enter your last name"
-                        className="bg-gray-700 border-gray-600 text-white"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="pl-10 bg-gray-700 border-gray-600 text-white"
+                        placeholder="Your full name"
                         required
                       />
                     </div>
                   </div>
-                </div>
-
-                {/* Contact Information */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-4">Contact Information</h3>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="email" className="block text-gray-300 mb-2">Email</label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="bg-gray-700 border-gray-600 text-white"
-                        required
-                      />
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                        Email
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                          <Mail className="h-5 w-5 text-gray-500" />
+                        </div>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          className="pl-10 bg-gray-700 border-gray-600 text-white"
+                          placeholder="Your email"
+                          required
+                        />
+                      </div>
                     </div>
+                    
                     <div>
-                      <label htmlFor="phone" className="block text-gray-300 mb-2">Phone</label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="Enter your phone number"
-                        className="bg-gray-700 border-gray-600 text-white"
-                        required
-                      />
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-1">
+                        Phone
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                          <Phone className="h-5 w-5 text-gray-500" />
+                        </div>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          className="pl-10 bg-gray-700 border-gray-600 text-white"
+                          placeholder="Your phone number"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Consultation Type */}
-                <div>
-                  <label htmlFor="consultationType" className="block text-gray-300 mb-2">Consultation Type</label>
-                  <Select>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                      <SelectValue placeholder="Select consultation type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                      {consultationTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Preferred Date */}
-                <div>
-                  <label className="block text-gray-300 mb-2">Preferred Date</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full bg-gray-700 border-gray-600 text-white justify-start text-left font-normal"
+                  
+                  <div>
+                    <label htmlFor="consultationType" className="block text-sm font-medium text-gray-300 mb-1">
+                      Consultation Type
+                    </label>
+                    <Select
+                      value={formData.consultationType}
+                      onValueChange={handleConsultationTypeChange}
+                    >
+                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                        <SelectValue placeholder="Select consultation type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                        <SelectItem value="architecture">Architecture</SelectItem>
+                        <SelectItem value="construction">Construction</SelectItem>
+                        <SelectItem value="interior">Interior Design</SelectItem>
+                        <SelectItem value="renovation">Renovation</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Preferred Date
+                      </label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-left font-normal bg-gray-700 border-gray-600 text-white hover:bg-gray-600",
+                              !date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date ? format(date, "PPP") : <span>Select date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700 text-white">
+                          <CalendarComponent
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            initialFocus
+                            disabled={(date) => 
+                              date < new Date(new Date().setHours(0, 0, 0, 0)) || 
+                              date.getDay() === 0 || 
+                              date.getDay() === 6
+                            }
+                            className="bg-gray-800 text-white"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Preferred Time
+                      </label>
+                      <Select
+                        value={time}
+                        onValueChange={setTime}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        initialFocus
-                        className="bg-gray-800 text-white"
+                        <SelectTrigger 
+                          className="bg-gray-700 border-gray-600 text-white"
+                          disabled={!date}
+                        >
+                          <SelectValue placeholder="Select time" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                          {availableTimes.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {t}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-1">
+                      Message
+                    </label>
+                    <div className="relative">
+                      <div className="absolute top-3 left-3 pointer-events-none">
+                        <MessageSquare className="h-5 w-5 text-gray-500" />
+                      </div>
+                      <Textarea
+                        id="message"
+                        name="message"
+                        value={formData.message}
+                        onChange={handleChange}
+                        className="pl-10 bg-gray-700 border-gray-600 text-white h-32"
+                        placeholder="Tell us about your project and what you'd like to discuss"
+                        required
                       />
-                    </PopoverContent>
-                  </Popover>
+                    </div>
+                  </div>
                 </div>
-
-                {/* Preferred Time */}
-                <div>
-                  <label htmlFor="preferredTime" className="block text-gray-300 mb-2">Preferred Time</label>
-                  <Select>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                      <SelectValue placeholder="Select preferred time" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                      {timeSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Project Details */}
-                <div>
-                  <label htmlFor="projectDetails" className="block text-gray-300 mb-2">Project Details</label>
-                  <Textarea
-                    id="projectDetails"
-                    placeholder="Please provide details about your project"
-                    className="bg-gray-700 border-gray-600 text-white h-32"
-                  />
-                </div>
-
-                {/* Questions or Comments */}
-                <div>
-                  <label htmlFor="questions" className="block text-gray-300 mb-2">Questions or Comments</label>
-                  <Textarea
-                    id="questions"
-                    placeholder="Any specific questions or comments for the consultation"
-                    className="bg-gray-700 border-gray-600 text-white h-24"
-                  />
-                </div>
-
-                <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                  Book Consultation
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Booking..." : "Book Consultation"}
                 </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      {/* What to Expect */}
-      <section className="py-16 bg-black">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold mb-4">What to Expect</h2>
-            <p className="text-gray-300 max-w-3xl mx-auto">
-              Our consultation process is designed to understand your needs and provide expert guidance
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-gray-800 p-6 rounded-lg text-center">
-              <div className="bg-blue-500 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Initial Consultation</h3>
-              <p className="text-gray-300">
-                A 60-minute session with our experts to discuss your vision, requirements, and project goals.
-              </p>
-            </div>
-
-            <div className="bg-gray-800 p-6 rounded-lg text-center">
-              <div className="bg-orange-500 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Expert Advice</h3>
-              <p className="text-gray-300">
-                Professional insights on feasibility, design options, construction considerations, and budget guidance.
-              </p>
-            </div>
-
-            <div className="bg-gray-800 p-6 rounded-lg text-center">
-              <div className="bg-blue-500 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Next Steps</h3>
-              <p className="text-gray-300">
-                Clear recommendations on how to proceed with your project and a proposed timeline for implementation.
-              </p>
+              </form>
             </div>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 };

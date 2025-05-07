@@ -11,6 +11,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Architecture from "./pages/Architecture";
+import ArchitecturePlans from "./pages/ArchitecturePlans";
 import Construction from "./pages/Construction";
 import Projects from "./pages/Projects";
 import Contact from "./pages/Contact";
@@ -22,7 +23,7 @@ import BlueprintPurchase from "./pages/BlueprintPurchase";
 import NotFound from "./pages/NotFound";
 
 // Layout components
-import Navbar from "./components/Navbar";
+import SideNav from "./components/SideNav";
 import Footer from "./components/Footer";
 
 const queryClient = new QueryClient();
@@ -34,13 +35,14 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="flex flex-col min-h-screen bg-workants-black">
-            <Navbar />
-            <main className="flex-grow">
+          <div className="flex min-h-screen bg-workants-black">
+            <SideNav />
+            <main className="flex-grow md:ml-64">
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/architecture" element={<Architecture />} />
+                <Route path="/architecture/plans" element={<ArchitecturePlans />} />
                 <Route path="/construction" element={<Construction />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/contact" element={<Contact />} />
@@ -58,8 +60,8 @@ const App = () => (
                 <Route path="/blueprints/:id" element={<BlueprintPurchase />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <Footer />
             </main>
-            <Footer />
           </div>
         </BrowserRouter>
       </TooltipProvider>
