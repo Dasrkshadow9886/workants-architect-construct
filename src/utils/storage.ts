@@ -1,11 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-export const BLUEPRINTS_BUCKET = 'blueprints';
+export const BLUEPRINTS_BUCKET = 'blueprint_files';
 
 export const uploadBlueprint = async (file: File, fileName: string): Promise<string> => {
   const fileExt = file.name.split('.').pop();
-  const filePath = `${fileName}-${Date.now()}.${fileExt}`;
+  const filePath = `${fileName.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.${fileExt}`;
   
   const { data, error } = await supabase.storage
     .from(BLUEPRINTS_BUCKET)
