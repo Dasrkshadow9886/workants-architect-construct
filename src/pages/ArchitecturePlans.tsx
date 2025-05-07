@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AddBlueprintForm from '@/components/AddBlueprintForm';
 import { useAuth } from '@/contexts/AuthContext';
+import { addDemoBlueprint } from '@/utils/seedData';
 
 interface Blueprint {
   id: string;
@@ -67,6 +68,9 @@ const ArchitecturePlans = () => {
   const fetchBlueprints = async () => {
     setIsLoading(true);
     try {
+      // First, add a demo blueprint if none exists
+      await addDemoBlueprint();
+      
       const { data, error } = await supabase
         .from('blueprints')
         .select('*');
