@@ -24,7 +24,7 @@ const ArchitecturePlans = () => {
   const [filteredBlueprints, setFilteredBlueprints] = useState<Blueprint[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -75,7 +75,7 @@ const ArchitecturePlans = () => {
     }
     
     // Apply category filter
-    if (categoryFilter) {
+    if (categoryFilter && categoryFilter !== "all") {
       result = result.filter((blueprint) => blueprint.category === categoryFilter);
     }
     
@@ -111,7 +111,7 @@ const ArchitecturePlans = () => {
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
@@ -184,7 +184,7 @@ const ArchitecturePlans = () => {
             <Building2 className="h-16 w-16 text-gray-500 mb-4" />
             <h3 className="text-xl font-medium">No blueprints found</h3>
             <p className="text-gray-400 text-center mt-2">
-              {searchQuery || categoryFilter
+              {searchQuery || categoryFilter !== "all"
                 ? "Try changing your search or filter criteria"
                 : "Check back later for new architectural plans"}
             </p>
