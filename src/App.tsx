@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RequireAuth } from "@/components/RequireAuth";
 
@@ -23,7 +23,7 @@ import BlueprintPurchase from "./pages/BlueprintPurchase";
 import NotFound from "./pages/NotFound";
 
 // Layout components
-import SideNav from "./components/SideNav";
+import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
 const queryClient = new QueryClient();
@@ -35,9 +35,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="flex min-h-screen bg-workants-black">
-            <SideNav />
-            <main className="flex-grow md:ml-64">
+          <div className="flex flex-col min-h-screen bg-workants-black">
+            <Navbar />
+            <main className="flex-grow">
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/about" element={<About />} />
