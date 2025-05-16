@@ -54,3 +54,39 @@ export const listFiles = async (prefix: string = ''): Promise<string[]> => {
   
   return data?.map(file => file.name) || [];
 };
+
+export const createOzowPayment = async (
+  amount: number, 
+  userId: string, 
+  blueprintId: string, 
+  successUrl: string, 
+  cancelUrl: string
+): Promise<string> => {
+  try {
+    // Create a payment record in the database
+    const { data, error } = await supabase
+      .from('purchases')
+      .insert({
+        user_id: userId,
+        blueprint_id: blueprintId,
+        amount: amount,
+        payment_status: 'pending'
+      })
+      .select()
+      .single();
+      
+    if (error) throw error;
+
+    // In a real implementation, this would make an API call to Ozow
+    // For now, we'll simulate the payment URL generation
+    // Replace with actual Ozow API integration when ready
+    
+    // Simulated Ozow payment URL with the purchase ID as reference
+    const paymentUrl = `https://pay.ozow.com/?siteCode=WORKANTS&amount=${amount.toFixed(2)}&reference=${data.id}&cancelUrl=${encodeURIComponent(cancelUrl)}&successUrl=${encodeURIComponent(successUrl)}`;
+    
+    return paymentUrl;
+  } catch (error: any) {
+    console.error('Error creating Ozow payment:', error);
+    throw error;
+  }
+};

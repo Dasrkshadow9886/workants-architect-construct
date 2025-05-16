@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Building2, Check, Download, AlertCircle, ChevronLeft } from "lucide-react";
+import { Building2, Check, Download, AlertCircle, ChevronLeft, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { createOzowPayment } from "@/utils/storage";
 
 interface Blueprint {
   id: string;
@@ -33,6 +34,7 @@ const BlueprintPurchase = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const currentUrl = window.location.origin;
 
   useEffect(() => {
     const fetchBlueprint = async () => {
@@ -88,6 +90,66 @@ const BlueprintPurchase = () => {
     fetchBlueprint();
   }, [id, user, toast]);
 
+  // Check for payment success or cancellation in URL parameters
+  useEffect(() => {
+    const checkPaymentStatus = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const status = urlParams.get('status');
+      const purchaseId = urlParams.get('reference');
+      
+      if (status && purchaseId) {
+        try {
+          if (status === 'success') {
+            // Update the purchase record
+            const { error: updateError } = await supabase
+              .from('purchases')
+              .update({
+                payment_status: 'completed',
+                payment_id: `ozow_${Date.now()}`
+              })
+              .eq('id', purchaseId);
+              
+            if (updateError) throw updateError;
+            
+            // Fetch the updated purchase record
+            const { data: purchaseData, error: fetchError } = await supabase
+              .from('purchases')
+              .select('*')
+              .eq('id', purchaseId)
+              .single();
+              
+            if (fetchError) throw fetchError;
+            
+            setPurchase(purchaseData);
+            
+            toast({
+              title: "Payment successful!",
+              description: "You can now download your blueprint",
+            });
+          } else if (status === 'cancelled') {
+            toast({
+              variant: "destructive",
+              title: "Payment cancelled",
+              description: "Your payment was cancelled. You can try again if you wish.",
+            });
+          }
+          
+          // Remove query parameters from URL
+          navigate(window.location.pathname, { replace: true });
+        } catch (error: any) {
+          console.error('Error updating payment status:', error);
+          toast({
+            variant: "destructive",
+            title: "Error updating payment",
+            description: error.message || "Failed to update payment status.",
+          });
+        }
+      }
+    };
+    
+    checkPaymentStatus();
+  }, [navigate, toast]);
+
   const initiatePayment = async () => {
     if (!user) {
       toast({
@@ -103,51 +165,26 @@ const BlueprintPurchase = () => {
     try {
       setIsPurchasing(true);
       
-      // Create a pending purchase record
-      const { data: newPurchase, error: purchaseError } = await supabase
-        .from('purchases')
-        .insert({
-          user_id: user.id,
-          blueprint_id: blueprint.id,
-          amount: blueprint.price,
-          payment_status: 'pending'
-        })
-        .select()
-        .single();
-        
-      if (purchaseError) throw purchaseError;
+      // Success and cancel URLs
+      const successUrl = `${currentUrl}/blueprints/${id}?status=success`;
+      const cancelUrl = `${currentUrl}/blueprints/${id}?status=cancelled`;
       
-      // For now, we'll just simulate a successful payment
-      // In a real implementation, you would redirect to Ozow payment page
+      // Create Ozow payment
+      const paymentUrl = await createOzowPayment(
+        blueprint.price,
+        user.id,
+        blueprint.id,
+        successUrl,
+        cancelUrl
+      );
+      
       toast({
-        title: "Payment initiated",
-        description: "You will be redirected to the payment gateway...",
+        title: "Redirecting to payment",
+        description: "You will be redirected to the Ozow payment page...",
       });
       
-      // Simulate payment gateway
-      setTimeout(async () => {
-        // Update purchase record to completed
-        const { error: updateError } = await supabase
-          .from('purchases')
-          .update({
-            payment_status: 'completed',
-            payment_id: `sim_${Date.now()}`
-          })
-          .eq('id', newPurchase.id);
-          
-        if (updateError) throw updateError;
-        
-        setPurchase({
-          id: newPurchase.id,
-          payment_status: 'completed',
-          payment_id: `sim_${Date.now()}`
-        });
-        
-        toast({
-          title: "Purchase successful!",
-          description: "You can now download your blueprint",
-        });
-      }, 2000);
+      // Redirect to Ozow payment page
+      window.location.href = paymentUrl;
       
     } catch (error: any) {
       console.error('Error initiating payment:', error);
@@ -156,7 +193,6 @@ const BlueprintPurchase = () => {
         title: "Payment failed",
         description: error.message || "Failed to process payment. Please try again later.",
       });
-    } finally {
       setIsPurchasing(false);
     }
   };
@@ -171,8 +207,14 @@ const BlueprintPurchase = () => {
       return;
     }
     
-    // In a real implementation, you would have a secure download link
-    // For now, we'll just show a success message
+    // Create an anchor element and trigger download
+    const a = document.createElement('a');
+    a.href = blueprint.file_url;
+    a.download = blueprint.title.replace(/\s+/g, '-').toLowerCase() + '.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
     toast({
       title: "Download started",
       description: "Your blueprint is being downloaded",
@@ -326,11 +368,12 @@ const BlueprintPurchase = () => {
                 </CardContent>
                 <CardFooter>
                   <Button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+                    className="bg-blue-600 hover:bg-blue-700 text-white w-full flex items-center justify-center"
                     onClick={initiatePayment}
                     disabled={isPurchasing}
                   >
-                    {isPurchasing ? 'Processing...' : 'Purchase Now'}
+                    <Wallet className="mr-2 h-4 w-4" />
+                    {isPurchasing ? 'Processing...' : 'Pay with Ozow'}
                   </Button>
                 </CardFooter>
               </Card>
