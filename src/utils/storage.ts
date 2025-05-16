@@ -77,12 +77,18 @@ export const createOzowPayment = async (
       
     if (error) throw error;
 
-    // In a real implementation, this would make an API call to Ozow
-    // For now, we'll simulate the payment URL generation
-    // Replace with actual Ozow API integration when ready
+    // Get the Ozow site code from the Supabase secrets
+    const { data: secretData, error: secretError } = await supabase.functions.invoke('get-ozow-site-code');
     
-    // Simulated Ozow payment URL with the purchase ID as reference
-    const paymentUrl = `https://pay.ozow.com/?siteCode=WORKANTS&amount=${amount.toFixed(2)}&reference=${data.id}&cancelUrl=${encodeURIComponent(cancelUrl)}&successUrl=${encodeURIComponent(successUrl)}`;
+    if (secretError) {
+      console.error('Error getting Ozow site code:', secretError);
+      throw new Error('Failed to retrieve Ozow configuration');
+    }
+    
+    const siteCode = secretData.siteCode;
+
+    // Generate a real Ozow payment URL with the purchase ID as reference
+    const paymentUrl = `https://pay.ozow.com/?siteCode=${siteCode}&amount=${amount.toFixed(2)}&reference=${data.id}&cancelUrl=${encodeURIComponent(cancelUrl)}&successUrl=${encodeURIComponent(successUrl)}`;
     
     return paymentUrl;
   } catch (error: any) {

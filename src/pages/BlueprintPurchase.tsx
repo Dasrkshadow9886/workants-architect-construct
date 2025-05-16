@@ -169,7 +169,7 @@ const BlueprintPurchase = () => {
       const successUrl = `${currentUrl}/blueprints/${id}?status=success`;
       const cancelUrl = `${currentUrl}/blueprints/${id}?status=cancelled`;
       
-      // Create Ozow payment
+      // Create Ozow payment using our updated function
       const paymentUrl = await createOzowPayment(
         blueprint.price,
         user.id,
@@ -283,7 +283,7 @@ const BlueprintPurchase = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-1">
             <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-              {blueprint.file_url ? (
+              {blueprint?.file_url ? (
                 <img 
                   src={blueprint.file_url} 
                   alt={blueprint.title} 
@@ -299,7 +299,7 @@ const BlueprintPurchase = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Category</span>
                   <span className="bg-blue-900/30 px-2 py-1 rounded text-xs text-blue-300">
-                    {blueprint.category}
+                    {blueprint?.category}
                   </span>
                 </div>
               </div>
@@ -307,13 +307,13 @@ const BlueprintPurchase = () => {
           </div>
           
           <div className="md:col-span-2">
-            <h1 className="text-3xl font-bold mb-4">{blueprint.title}</h1>
+            <h1 className="text-3xl font-bold mb-4">{blueprint?.title}</h1>
             <p className="text-gray-300 mb-6 whitespace-pre-line">
-              {blueprint.description}
+              {blueprint?.description}
             </p>
             
             <div className="text-3xl font-bold text-blue-400 mb-8">
-              R{blueprint.price.toFixed(2)}
+              R{blueprint?.price?.toFixed(2)}
             </div>
             
             {purchase?.payment_status === 'completed' ? (
