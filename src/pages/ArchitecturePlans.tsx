@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { Building2, Filter, Search } from 'lucide-react';
@@ -67,16 +68,23 @@ const ArchitecturePlans = () => {
   const fetchBlueprints = async () => {
     setIsLoading(true);
     try {
-      // First, add a demo blueprint if none exists
+      // First, add demo blueprints if none exist
       await addDemoBlueprint();
+      
+      // Add short delay to ensure seeds have time to process
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       const { data, error } = await supabase
         .from('blueprints')
         .select('*');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from Supabase:', error);
+        throw error;
+      }
 
       if (data) {
+        console.log('Fetched blueprints:', data);
         setBlueprints(data);
         setFilteredBlueprints(data);
         
